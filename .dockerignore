@@ -1,0 +1,16 @@
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+android/
+ios/
+macos/
+windows/
+linux/
+web/index.html (si tu veux le surcharger plus tard)
+.env
+.idea/
+.vscode/
+*.iml
