@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  flutter-web:
+    build: .
+    container_name: flutter_web_app
+    ports:
+      - "8080:80"
+    networks:
+      - supmap-network
+    restart: unless-stopped
+
+networks:
+  supmap-network:
+    external: true
