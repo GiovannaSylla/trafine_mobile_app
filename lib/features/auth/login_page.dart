@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supmap_clean/services/auth_service.dart';
+import 'package:supmap_clean/features/home/home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -37,7 +38,19 @@ class _LoginPageState extends State<LoginPage> {
             : ElevatedButton(
           onPressed: () async {
             await authService.login();
-            setState(() {});
+            final userInfo = authService.getUserInfo();
+
+            String prenom = userInfo['given_name'] ?? 'Utilisateur';
+            String nom = userInfo['family_name'] ?? '';
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => HomePage(
+                  prenom: prenom,
+                  nom: nom,
+                ),
+              ),
+            );
           },
           child: const Text('Se connecter'),
         ),

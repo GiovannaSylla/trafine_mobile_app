@@ -36,5 +36,13 @@ class AuthService {
     }
   }
 
+  Map<String, String> getUserInfo() {
+    final user = _credentials?.user;
+    return {
+      'given_name': user?.givenName ?? '',
+      'family_name': user?.familyName ?? '',
+    };
+  }
+
   bool get isLoggedIn => _credentials != null;
 }

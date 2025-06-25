@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supmap_clean/features/auth/login_page.dart';
-//import 'package:supmap_clean/features/home/home_page.dart';
-import 'features/navigation/main_screen.dart';
+import 'package:supmap_clean/features/auth/login_page.dart'; // ✅ Vérifie que ce fichier existe
+import 'features/navigation/main_screen.dart'; // si tu en as besoin plus tard
 
 void main() {
   runApp(const MyApp());
@@ -19,8 +18,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.deepPurple,
         fontFamily: 'Roboto',
       ),
-    // home:  MainScreen(),
-     home: const LoginPage(),
+      home: LoginPage(),
     );
   }
 }
