@@ -1,0 +1,73 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.newDataInputStream())
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
+def flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
+
+android {
+    namespace = "com.example.supmap_clean"
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId "com.supmap.mobile"
+        minSdk = 21
+        targetSdk = 34
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+
+        manifestPlaceholders = [
+                auth0Domain: "dev-0mfimrwwur6j6gw2.us.auth0.com",
+                auth0Scheme: "com.supmap.mobile",
+                appAuthRedirectScheme: "com.supmap.mobile"
+        ]
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        debug {
+            manifestPlaceholders = [
+                    auth0Domain: "dev-0mfimrwwur6j6gw2.us.auth0.com",
+                    auth0Scheme: "com.supmap.mobile"
+            ]
+        }
+        release {
+            signingConfig signingConfigs.debug
+            manifestPlaceholders = [
+                    auth0Domain: "dev-0mfimrwwur6j6gw2.us.auth0.com",
+                    auth0Scheme: "com.supmap.mobile"
+            ]
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'androidx.window') {
+                details.useVersion '1.0.0'
+            }
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}
