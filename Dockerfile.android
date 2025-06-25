@@ -1,0 +1,41 @@
+FROM ubuntu:22.04
+
+# Dépendances système
+RUN apt-get update && apt-get install -y \
+    curl unzip git xz-utils zip libglu1-mesa openjdk-17-jdk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Variables d'environnement Android SDK
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=${PATH}:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator
+
+# Installer Android SDK Command Line Tools
+RUN mkdir -p $ANDROID_HOME/cmdline-tools && \
+    curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && \
+    unzip commandlinetools.zip -d $ANDROID_HOME/cmdline-tools && \
+    mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest && \
+    rm commandlinetools.zip
+
+# Accepter les licences et installer les plateformes
+RUN yes | sdkmanager --licenses && \
+    sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+# Installer Flutter
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH="${PATH}:${FLUTTER_HOME}/bin"
+
+RUN git clone https://github.com/flutter/flutter.git -b stable $FLUTTER_HOME
+
+# Pré-télécharger les artefacts Flutter
+RUN flutter doctor && flutter precache
+
+# Créer le dossier d'app
+WORKDIR /app
+COPY . .
+
+# Récupérer les dépendances
+RUN flutter pub get
+ # Build APK en release
+RUN flutter build apk --release
+
+# APK généré => /app/build/app/outputs/flutter-apk/app-release.apk
