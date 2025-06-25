@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'map_screen.dart';
 
 class ItineraryPage extends StatefulWidget {
@@ -15,11 +16,60 @@ class _ItineraryPageState extends State<ItineraryPage> {
   bool _avoidTolls = true;
   bool _fastestRoute = true;
 
+  List<Map<String, dynamic>> _history = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItineraryHistory();
+  }
+
+  void _swapLocations() {
+    final temp = _departureController.text;
+    setState(() {
+      _departureController.text = _destinationController.text;
+      _destinationController.text = temp;
+    });
+  }
+
+  Future<void> _saveItinerary(String from, String to) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> history = prefs.getStringList('itinerary_history') ?? [];
+
+    final newItinerary = jsonEncode({
+      'from': from,
+      'to': to,
+      'date': DateTime.now().toIso8601String()
+    });
+
+    history.add(newItinerary);
+    await prefs.setStringList('itinerary_history', history);
+    _loadItineraryHistory();
+  }
+
+  Future<void> _loadItineraryHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> history = prefs.getStringList('itinerary_history') ?? [];
+
+    setState(() {
+      _history = history
+          .map((item) => Map<String, dynamic>.from(jsonDecode(item)))
+          .toList()
+          .reversed
+          .toList();
+    });
+  }
+
+  String _formatDate(String isoDate) {
+    final date = DateTime.parse(isoDate);
+    return "${date.day}/${date.month}/${date.year} à ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Planification d’itinéraire"),
+        title: const Text("Planification d’itinéraire"),
         backgroundColor: Colors.deepPurple,
       ),
       body: SingleChildScrollView(
@@ -27,72 +77,75 @@ class _ItineraryPageState extends State<ItineraryPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               "Planifier un itinéraire",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 16),
-
-            // Champ DEPART
+            const SizedBox(height: 16),
             TextField(
               controller: _departureController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.my_location),
                 labelText: 'Point de départ',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 12),
-
-            // Champ DESTINATION
+            const SizedBox(height: 12),
+            Center(
+              child: IconButton(
+                onPressed: _swapLocations,
+                icon: const Icon(Icons.swap_vert, size: 30, color: Colors.deepPurple),
+                tooltip: "Inverser Départ/Destination",
+              ),
+            ),
             TextField(
               controller: _destinationController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.place),
                 labelText: 'Destination',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
-
-            // BOUTON afficher l'itinéraire
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  if (_departureController.text.isNotEmpty && _destinationController.text.isNotEmpty) {
+                onPressed: () async {
+                  final from = _departureController.text;
+                  final to = _destinationController.text;
+
+                  if (from.isNotEmpty && to.isNotEmpty) {
+                    await _saveItinerary(from, to);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => MapScreen(
-                          departure: _departureController.text,
-                          destination: _destinationController.text,
+                          departure: from,
+                          destination: to,
                         ),
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Veuillez remplir les deux champs.")),
+                      const SnackBar(content: Text("Veuillez remplir les deux champs.")),
                     );
                   }
                 },
-                icon: Icon(Icons.map),
-                label: Text(
+                icon: const Icon(Icons.map),
+                label: const Text(
                   "Afficher l’itinéraire",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
-                  minimumSize: Size.fromHeight(50),
+                  minimumSize: const Size.fromHeight(50),
                 ),
               ),
             ),
-
-            SizedBox(height: 24),
-            Text("Options", style: TextStyle(fontWeight: FontWeight.bold)),
-
+            const SizedBox(height: 24),
+            const Text("Options", style: TextStyle(fontWeight: FontWeight.bold)),
             CheckboxListTile(
-              title: Text("Éviter les péages"),
+              title: const Text("Éviter les péages"),
               value: _avoidTolls,
               onChanged: (value) {
                 setState(() {
@@ -101,12 +154,46 @@ class _ItineraryPageState extends State<ItineraryPage> {
               },
             ),
             CheckboxListTile(
-              title: Text("Chemin le plus rapide"),
+              title: const Text("Chemin le plus rapide"),
               value: _fastestRoute,
               onChanged: (value) {
                 setState(() {
                   _fastestRoute = value!;
                 });
+              },
+            ),
+            const SizedBox(height: 24),
+            const Text("Historique des itinéraires", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _history.isEmpty
+                ? const Text("Aucun itinéraire enregistré.")
+                : ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _history.length,
+              itemBuilder: (context, index) {
+                final item = _history[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MapScreen(
+                          departure: item['from'],
+                          destination: item['to'],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Card(
+                    elevation: 2,
+                    child: ListTile(
+                      leading: const Icon(Icons.history),
+                      title: Text("${item['from']} ➜ ${item['to']}"),
+                      subtitle: Text("Le ${_formatDate(item['date'])}"),
+                    ),
+                  ),
+                );
               },
             ),
           ],
