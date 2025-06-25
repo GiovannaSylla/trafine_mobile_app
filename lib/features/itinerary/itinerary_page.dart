@@ -53,7 +53,20 @@ class _ItineraryPageState extends State<ItineraryPage> {
 
     setState(() {
       _history = history
-          .map((item) => Map<String, dynamic>.from(jsonDecode(item)))
+          .map((item) {
+        try {
+          final decoded = jsonDecode(item);
+          if (decoded is Map &&
+              decoded.containsKey('from') &&
+              decoded.containsKey('to') &&
+              decoded.containsKey('date')) {
+            return Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {}
+        return null;
+      })
+          .where((item) => item != null)
+          .cast<Map<String, dynamic>>()
           .toList()
           .reversed
           .toList();
@@ -173,6 +186,10 @@ class _ItineraryPageState extends State<ItineraryPage> {
               itemCount: _history.length,
               itemBuilder: (context, index) {
                 final item = _history[index];
+                if (!item.containsKey('from') || !item.containsKey('to')) {
+                  return const SizedBox();
+                }
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.push(

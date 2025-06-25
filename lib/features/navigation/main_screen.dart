@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import '../itinerary/itinerary_page.dart';
-import '../incidents/signalement_page.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -16,7 +16,6 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = const [
     HomePage(prenom: "Test", nom: "Utilisateur"),
     ItineraryPage(),
-    SignalementPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -40,10 +39,11 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.alt_route),
             label: 'Itinéraire',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.report),
-            label: 'Signalement',
-          ),
+          // Si tu veux réutiliser cet espace plus tard, tu peux le garder :
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.report),
+          //   label: 'Signalement',
+          // ),
         ],
       ),
     );
